@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+require 'jwtgen'
+require 'optparse'
+require 'clipboard'
+
+options = {}
+ARGV << '-h' if ARGV.empty?
+begin
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: jwtgen [options]'
+
+    opts.on('-u', '--user_id [USER_ID]', 'User id') do |user_id|
+      options[:user_id] = user_id
+    end
+
+    opts.on('-e', '--email [EMAIL]', 'User email') do |email|
+      options[:email] = email
+    end
+
+    opts.on('-a', '--algorithm [ALGORITHM]', "Encryption method. Available options: #{Jwtgen::AVAILABLE_ALGORITHMS}. Default: 'none'") do |algorithm|
+      options[:algorithm] = algorithm
+    end
+
+    opts.on('-k', '--key [KEY]', 'secret key.') do |key|
+      options[:key] = key
+    end
+
+    opts.on('-p', '--payload [PAYLOAD]', Array, 'Additional parameters: -p "key1=value1,key2=value2"') do |payload|
+      options[:payload] = payload
+    end
+
+    opts.on('-h', '--help', 'Help') do
+      puts opts
+      exit
+    end
+  end.parse!(ARGV)
+rescue OptionParser::InvalidOption => error
+  puts error
+  exit
+end
+
+begin
+  jwtgen = Jwtgen.new(options)
+  jwt = jwtgen.generate_token
+  Clipboard.copy(jwt)
+  puts 'JWT has been copied to clipboard.'
+rescue ArgumentError, JWT::EncodeError, NotImplementedError => error
+  puts error
+  exit
+end
